@@ -1,0 +1,77 @@
+﻿@page
+@model FakeNews.Pages.News.IndexModel
+
+@{
+    ViewData["Title"] = "News List";
+}
+
+<h1>Index</h1>
+
+<p>
+    <a asp-page="Create">Create New</a>
+</p>
+
+<form class="form-inline">
+    <p>
+        Domain:
+        <select asp-for="NewsDomain" asp-items="Model.Domain">
+            <option value="">All</option>
+        </select>
+        Credibility:
+        <select asp-for="NewsCredibility" asp-items="Model.Credibility">
+            <option value="">All</option>
+        </select>
+        Search: <input type="text" asp-for="SearchString" />
+        <input type="submit" value="Filter" class="btn btn-primary">
+        <a asp-route-NewsDomain="" asp-route-SearchString="" asp-route-NewsCredibility="" class="btn btn-primary">Reset</a>
+    </p>
+</form>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>
+                @Html.DisplayNameFor(model => model.News[0].Title)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.News[0].Content)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.News[0].PublishDate)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.News[0].Domain)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.News[0].Credibility)
+            </th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+@foreach (var item in Model.News) {
+        <tr>
+            <td>
+                @Html.DisplayFor(modelItem => item.Title)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Content)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.PublishDate)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Domain)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Credibility)
+            </td>
+            <td>
+                <a asp-page="./Edit" asp-route-id="@item.ID">Edit</a> |
+                <a asp-page="./Details" asp-route-id="@item.ID">Details</a> |
+                <a asp-page="./Delete" asp-route-id="@item.ID">Delete</a>
+            </td>
+        </tr>
+}
+    </tbody>
+</table>
