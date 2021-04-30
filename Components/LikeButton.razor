@@ -1,0 +1,13 @@
+﻿<button onclick="@ToggleLike()"
+        class="btn @( _liked == true ? "btn-primary" : "btn-secondary" )">
+    <i class="fas fa-thumbs-up fa-lg"></i>
+</button>
+
+@functions {
+    bool _liked;
+
+    async Task ToggleLike()
+    {
+        _liked = !_liked;
+    }
+}

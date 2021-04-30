@@ -1,6 +1,7 @@
 ﻿using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore.Query;
 
 namespace FakeNews.Models
 {
@@ -23,5 +24,8 @@ namespace FakeNews.Models
 
         [RegularExpression(@"Fake|Real")]
         public string Credibility { get; set; }
+
+        public int NumberOfLikes { get; set; }
+        public int NumberOfDislike { get; set; }
     }
 }

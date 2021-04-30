@@ -1,0 +1,13 @@
+﻿<button onclick="@ToggleDislike()"
+        class="btn @( _disliked == true ? "btn-primary" : "btn-secondary" )">
+    <i class="fas fa-thumbs-up fa-lg"></i>
+</button>
+
+@functions {
+    bool _disliked;
+
+    async Task ToggleDislike()
+    {
+        _disliked = !_disliked;
+    }
+}
