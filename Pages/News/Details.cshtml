@@ -1,4 +1,5 @@
 ﻿@page "{id:int?}"
+@using FakeNews.TFIDF
 @model FakeNews.Pages.News.DetailsModel
 
 @{
@@ -58,24 +59,31 @@
     </dl>
 </div>
 <div>
-    <a asp-page="./Edit" asp-route-id="@Model.News.ID">Edit</a> |
-    <a asp-page="./Index">Back to List</a>
-    <input type="button" value="Check news" class="btn btn-primary">
     <form method="post">
+        <input type="hidden" asp-for="News.ID" />
+        <a asp-page="./Edit" asp-route-id="@Model.News.ID">Edit</a> |
+        <a asp-page="./Index">Back to List</a>
         <button onclick="@ToggleLike()" asp-page-handler="LikeTask" asp-route-id="@Model.News.ID"
-                class="btn @( _liked == true ? "btn-primary" : "btn-secondary" )">
+                class="btn @(_liked == true ? "btn-primary" : "btn-secondary")">
             <i class="fas fa-thumbs-up fa-lg"></i>
         </button>
         <button onclick="@ToggleDislike()" asp-page-handler="DislikeTask" asp-route-id="@Model.News.ID"
-                class="btn @( _disliked == true ? "btn-primary" : "btn-secondary" )">
+                class="btn @(_disliked == true ? "btn-primary" : "btn-secondary")">
             <i class="fas fa-thumbs-down fa-lg"></i>
+        </button>
+    </form>
+    <form method="post">
+        <button onclick="@CheckNews(Model.News.ID)" asp-page-handler="CheckNews" asp-route-id="@Model.News.ID"
+                class="btn btn-primary">
+            Check News
         </button>
     </form>
 </div>
 
 <h3>@Model.Message</h3>
 
-@functions {
+@functions
+{
     bool _liked;
 
     async Task ToggleLike()
@@ -83,11 +91,52 @@
         _liked = !_liked;
     }
 }
-@functions {
+@functions
+{
     bool _disliked;
 
     async Task ToggleDislike()
     {
         _disliked = !_disliked;
+    }
+}
+@*@functions
+{
+    bool _message;
+
+    async Task CheckNews()
+    {
+        _message = !_message;
+    }
+}*@
+@functions
+{
+    async Task<bool> CheckNews(int? id)
+    {
+        var message = false;
+        var documents = new string[] {Model.News.Content};
+        var tfidfResult = AlgorithmForTfidf.Transform(documents, 2);
+        tfidfResult = AlgorithmForTfidf.Normalize(tfidfResult);
+
+        for (var index = 0; index < tfidfResult.Length; index++)
+        {
+            Console.WriteLine(documents[index]);
+
+            foreach (var value in tfidfResult[index])
+            {
+                Console.Write(value + ", ");
+
+                if (value < 0)
+                {
+                    message =  true;
+                }
+                else
+                {
+                    message = false;
+                }
+            }
+        }
+
+        return message;
     }
 }

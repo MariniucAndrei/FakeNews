@@ -2,8 +2,7 @@
 {
     public static class StopWords
     {
-        public static string[] StopWordsList = new string[]
-        {
+        public static string[] StopWordsList = {
             "a",
             "about",
             "above",
@@ -453,7 +452,7 @@
             "yourself",
             "yourselves",
             "you've",
-            "z",
+            "z"
         };
     }
 }

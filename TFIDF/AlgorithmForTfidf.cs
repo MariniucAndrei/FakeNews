@@ -11,41 +11,35 @@ namespace FakeNews.TFIDF
     {
         public static Dictionary<string,double> VocabularyIdf = new Dictionary<string, double>();
 
-        public static double[][] Transform(string [] documents, int vocabularyThreshold = 3)
+        public static double[][] Transform(string [] documents, int vocabularyThreshold = 2)
         {
             List<List<string>> stemmedDocs;
             List<string> vocabulary;
 
-            //Get the vocabulary and stem the documents at the same time
             vocabulary = GetVocabulary(documents, out stemmedDocs, vocabularyThreshold);
 
-            if (VocabularyIdf.Count == 0)
+            if (VocabularyIdf.Count != 0) return TransformToTfidfVectors(stemmedDocs, VocabularyIdf);
+
+            foreach (var term in vocabulary)
             {
-                //Calculate the IDF for each vocabulary term
-                foreach (var term in vocabulary)
-                {
-                    double numberOfDocsContainingTerm = stemmedDocs.Count(d => d.Contains(term));
-                    VocabularyIdf[term] =
-                        Math.Log(stemmedDocs.Count / (1 + numberOfDocsContainingTerm));
-                }
+                double numberOfDocsContainingTerm = stemmedDocs.Count(d => d.Contains(term));
+                VocabularyIdf[term] =
+                    Math.Log(stemmedDocs.Count / (1 + numberOfDocsContainingTerm));
             }
 
-            //Trasform each document into a vector of tfidf values
-            return TransformToTFIDFVectors(stemmedDocs, VocabularyIdf);
+            return TransformToTfidfVectors(stemmedDocs, VocabularyIdf);
         }
 
-        private static double[][] TransformToTFIDFVectors(List<List<string>> stemmedDocs,
-            Dictionary<string, double> vocabularyIDF)
+        private static double[][] TransformToTfidfVectors(List<List<string>> stemmedDocs,
+            Dictionary<string, double> vocabularyIdf)
         {
-            //Transform each document into a vector of tfidf values
             var vectors = new List<List<double>>();
             foreach (var doc in stemmedDocs)
             {
                 var vector = new List<double>();
 
-                foreach (var vocab in vocabularyIDF)
+                foreach (var vocab in vocabularyIdf)
                 {
-                    //Term frequency = count how many times the term appears in this document
                     double tf = doc.Count(d => d == vocab.Key);
                     var tfidf = tf * vocab.Value;
 
@@ -60,58 +54,21 @@ namespace FakeNews.TFIDF
 
         public static double[][] Normalize(double[][] vectors)
         {
-            //Normalize the vectors using L2-Norm
-            var normalizedVectors = new List<double[]>();
-            foreach (var vector in vectors)
-            {
-                var normalized = Normalize(vector);
-                normalizedVectors.Add(normalized);
-            }
-
-            return normalizedVectors.ToArray();
+            return vectors.Select(vector => Normalize(vector)).ToArray();
         }
 
         public static double[] Normalize(double[] vector)
         {
-            var result = new List<double>();
-
-            double sumSquared = 0;
-            foreach (var value in vector)
-            {
-                sumSquared += value * value;
-            }
+            var sumSquared = vector.Sum(value => value * value);
 
             var sqrtSumSquared = Math.Sqrt(sumSquared);
 
-            foreach (var value in vector)
-            {
-                //L2-norm: Xi = Xi /Sqrt(X0^2 + x1^2 + ... + Xn^2)
-                result.Add(value / sqrtSumSquared);
-            }
-
-            return result.ToArray();
-        }
-
-        public static void Save(string filePath = "vocabulary.dat")
-        {
-            //Save result to disk
-            using var fs = new FileStream(filePath, FileMode.Create);
-            var formatter = new BinaryFormatter();
-            formatter.Serialize(fs, VocabularyIdf);
-        }
-
-        public static void Load(string filePath = "vocabulary.dat")
-        {
-            //Load from disk
-            using var fs = new FileStream(filePath, FileMode.Open);
-            var formatter = new BinaryFormatter();
-            VocabularyIdf = (Dictionary<string, double>) formatter.Deserialize(fs);
+            return vector.Select(value => value / sqrtSumSquared).ToArray();
         }
 
         private static List<string> GetVocabulary(string[] docs, out List<List<string>> stemmedDocs,
             int vocabularyThreshold)
         {
-            var vocabulary = new List<string>();
             var wordCountList = new Dictionary<string, int>();
             stemmedDocs = new List<List<string>>();
 
@@ -128,59 +85,51 @@ namespace FakeNews.TFIDF
                     Console.WriteLine("Processing " + docIndex + "/" + docs.Length);
                 }
 
-                var parts2 = Tokenize(doc);
+                var parts2 = WordsProcessing(doc);
 
                 var words = new List<string>();
+
                 foreach (var part in parts2)
                 {
-                    //Strip non-alphanumeric characters
                     var stripped = Regex.Replace(part, "[^a-zA-Z0-9]", "");
 
-                    if (!StopWords.StopWordsList.Contains(stripped.ToLower()))
+                    if (StopWords.StopWordsList.Contains(stripped.ToLower())) continue;
+                    try
                     {
-                        try
-                        {
-                            var english = new EnglishWord(stripped);
-                            var stem = english.Stem;
-                            words.Add(stem);
+                        var english = new EnglishWord(stripped);
+                        var stem = english.Stem;
+                        words.Add(stem);
 
-                            if (stem.Length > 0)
+                        if (stem.Length > 0)
+                        {
+                            if (wordCountList.ContainsKey(stem))
                             {
-                                //Build the word count list
-                                if (wordCountList.ContainsKey(stem))
-                                {
-                                    wordCountList[stem]++;
-                                }
-                                else
-                                {
-                                    wordCountList.Add(stem, 0);
-                                }
-
-                                stemmedDoc.Add(stem);
+                                wordCountList[stem]++;
                             }
+                            else
+                            {
+                                wordCountList.Add(stem, 0);
+                            }
+
+                            stemmedDoc.Add(stem);
                         }
-                        catch (Exception e)
-                        {
-                            Console.WriteLine(e);
-                            throw;
-                        }
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine(e);
+                        throw;
                     }
                 }
 
                 stemmedDocs.Add(stemmedDoc);
             }
 
-            //Get the top words
             var vocabList = wordCountList.Where(w => w.Value >= vocabularyThreshold);
-            foreach (var item in vocabList)
-            {
-                vocabulary.Add(item.Key);
-            }
 
-            return vocabulary;
+            return vocabList.Select(item => item.Key).ToList();
         }
 
-        private static string[] Tokenize(string text)
+        private static string[] WordsProcessing(string text)
         {
             // Strip all HTML.
             text = Regex.Replace(text, "<[^<>]+>", "");
@@ -200,8 +149,22 @@ namespace FakeNews.TFIDF
             // Strip usernames.
             text = Regex.Replace(text, @"@[^\s]+", "username");
 
-            // Tokenize and also get rid of any punctuation
+            // WordsProcessing and also get rid of any punctuation
             return text.Split(" @$/#.-:&*+=[]?!(){},''\">_<;%\\".ToCharArray());
+        }
+
+        public static void Save(string filePath = "tfidf.dat")
+        {
+            using var fs = new FileStream(filePath, FileMode.Create);
+            var formatter = new BinaryFormatter();
+            formatter.Serialize(fs, VocabularyIdf);
+        }
+
+        public static void Load(string filePath = "tfidf.dat")
+        {
+            using var fs = new FileStream(filePath, FileMode.Open);
+            var formatter = new BinaryFormatter();
+            VocabularyIdf = (Dictionary<string, double>)formatter.Deserialize(fs);
         }
     }
 }

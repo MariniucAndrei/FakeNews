@@ -16,7 +16,7 @@ namespace FakeNews.Models
                 //Search for any news
                 if (context.News.Any())
                 {
-                    return; //DB has been seeded
+                    return;
                 }
 
                 context.News.AddRange

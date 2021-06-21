@@ -15,12 +15,8 @@ namespace FakeNews.TFIDF
 
         public int Start;
         public int End;
-        private string _text;
 
-        public string Text
-        {
-            get { return _text; }
-        }
+        public string Text { get; private set; }
 
 
         internal bool Contains(int index)
@@ -30,10 +26,7 @@ namespace FakeNews.TFIDF
 
         internal void GenerateRegion(string text)
         {
-            if (text.Length > Start)
-                _text = text.Substring(Start, Math.Min(End, text.Length) - Start);
-            else
-                _text = String.Empty;
+            Text = text.Length > Start ? text.Substring(Start, Math.Min(End, text.Length) - Start) : string.Empty;
         }
 
     }
